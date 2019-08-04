@@ -1,0 +1,114 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Authentication App</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
+</head>
+<body>
+    <div>
+        <h2>User info</h2>
+        <p id="info" />
+    </div>
+    <div>
+        <h2>Search by ID</h2>
+        <input type="text" id="userId" size="5" />
+        <input type="button" value="Search" onclick="find();" />
+        <table id="user" class="table"></table>
+    </div>
+    <div>
+        <h2>All Users</h2>
+        <table id="users" class="table"></table>
+    </div>
+<div>
+
+</div>
+
+    <script src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-2.0.3.min.js"></script>
+    <script>
+        var uriInfo = 'api/auth';
+        var uri = 'api/user';
+
+        function formatInfo(item) {
+            return 'Hello, ' + item.name + '! Your token is ' + item.token.value;
+        }
+
+        $(document).ready(function () {
+            // Send an AJAX request
+            $.getJSON(uriInfo)
+                .done(function (data) {
+                    $('#info').text(formatInfo(data));
+                })
+                .fail(function (jqXHR, textStatus, err) {
+                    var error;
+                    if (jqXHR.status === 401 || jqXHR.status === 403) {
+                        error = 'Пользователь не авторизован';
+                    } else {
+                        error = err;
+                    }
+                    $('#info').text('Error: ' + error);
+                });
+
+            $.getJSON(uri)
+                .done(function (data) {
+                    addHeader($('#users'));
+                    // On success, 'data' contains a list of products.
+                    $.each(data, function (key, item) {
+                        // Add a list item for the product.
+                        $('#users tbody').append(formatItem(item));
+                    });
+                });
+        });
+
+        //function formatItem(item) {
+        //    return item.Name + ': #' + item.RegisterDate;
+        //}
+
+        function formatItem(item) {
+            if (!item) {
+                return "Пользователь не найден";
+            }
+            var result = '<tr>';
+            result += '<td>'+ item.id +'</td>';
+            result += '<td>'+ item.email +'</td>';
+            result += '<td>'+ item.userName +'</td>';
+            result += '<td>'+ item.lastName +'</td>';
+
+            if (item.software.length > 0) {
+                result += '<td>';
+                $.each(item.software, function (index, s) {
+                    result += s.name + '<br>';
+                });
+                result += '</td>';
+            }
+
+            result += '</tr>';
+            return result;
+        }
+
+        function find() {
+            var id = $('#userId').val();
+            $.getJSON(uri + '/' + id)
+                .done(function (data) {
+                    addHeader($('#user'));
+                    $('#user tbody').append(formatItem(data));
+                })
+                .fail(function (jqXHR, textStatus, err) {
+                    $('#user').text('Error: ' + err);
+                });
+        }
+
+        function addHeader(parent) {
+            if (!$(parent).closest('thead')) return;
+            var html = '<thead><tr>';
+            html += '<th scope="col">Id</th>';
+            html += '<th scope="col">Email</th>';
+            html += '<th scope="col">UserName</th>';
+            html += '<th scope="col">LastName</th>';
+            html += '<th scope="col">Installed software</th>';
+            html += '</tr></thead>';
+            html += '<tbody></tbody>';
+            parent.html(html);
+        }
+    </script>
+</body>
+</html>
